@@ -485,16 +485,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Ubuntu](https://ubuntu.com/) for the stable Linux foundation
 - [Apache](https://httpd.apache.org/), [MySQL](https://www.mysql.com/), and [PHP](https://www.php.net/) communities
 
-## 📞 Support
-
-- **Issues**: [GitHub Issues](https://github.com/yourusername/LAMP-Setup-Automation/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/LAMP-Setup-Automation/discussions)
-- **Documentation**: [Wiki](https://github.com/yourusername/LAMP-Setup-Automation/wiki)
-
----
-
-**Made with ❤️ for the DevOps community**
-
 
 
 
