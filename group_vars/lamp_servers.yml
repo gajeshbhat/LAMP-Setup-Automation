@@ -1,0 +1,60 @@
+---
+# Variables specific to LAMP servers
+
+# Apache Configuration
+apache:
+  server_admin: "admin@localhost"
+  server_name: "{{ ansible_fqdn | default('localhost') }}"
+  document_root: "/var/www/html"
+  log_level: "warn"
+  modules:
+    - rewrite
+    - ssl
+    - headers
+  sites:
+    - name: "default"
+      template: "default.conf.j2"
+      enabled: true
+
+# MySQL Configuration
+mysql:
+  root_password: "{{ vault_mysql_root_password | default('changeme123') }}"
+  bind_address: "127.0.0.1"
+  port: 3306
+  databases:
+    - name: "lamp_app"
+      encoding: "utf8mb4"
+      collation: "utf8mb4_unicode_ci"
+  users:
+    - name: "app_user"
+      password: "{{ vault_mysql_app_password | default('apppass123') }}"
+      priv: "lamp_app.*:ALL"
+      host: "localhost"
+
+# PHP Configuration
+php:
+  version: "8.1"
+  modules:
+    - php-cli
+    - php-fpm
+    - php-mysql
+    - php-curl
+    - php-gd
+    - php-mbstring
+    - php-xml
+    - php-zip
+    - php-json
+    - php-intl
+  settings:
+    memory_limit: "256M"
+    upload_max_filesize: "64M"
+    post_max_size: "64M"
+    max_execution_time: "300"
+    display_errors: "Off"
+    log_errors: "On"
+
+# Security Configuration
+security:
+  fail2ban_enabled: true
+  ufw_enabled: true
+  automatic_updates: true

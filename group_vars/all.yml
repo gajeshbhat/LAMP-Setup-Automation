@@ -1,0 +1,29 @@
+---
+# Global variables for all hosts
+
+# System Configuration
+timezone: "UTC"
+locale: "en_US.UTF-8"
+
+# Package Management
+package_update_cache: true
+package_upgrade: false
+
+# User Configuration
+admin_user: "vagrant"
+admin_groups:
+  - sudo
+  - www-data
+
+# Firewall Configuration
+firewall_allowed_tcp_ports:
+  - "22"    # SSH
+  - "80"    # HTTP
+  - "443"   # HTTPS
+
+# Logging
+log_level: "info"
+
+# Backup Configuration
+backup_enabled: false
+backup_retention_days: 7

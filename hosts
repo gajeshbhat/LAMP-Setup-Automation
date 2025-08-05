@@ -1,3 +1,0 @@
-[web]
-# IP address or hostname of the server where LAMP stack will be installed
-example.com ansible_user=root

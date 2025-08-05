@@ -1,0 +1,168 @@
+---
+# LAMP Stack Validation Tests
+- name: Test LAMP Stack Installation
+  hosts: lamp_servers
+  gather_facts: true
+  become: true
+  
+  tasks:
+    - name: Test Apache service
+      block:
+        - name: Check if Apache is running
+          service_facts:
+        
+        - name: Verify Apache is active
+          assert:
+            that:
+              - ansible_facts.services['apache2.service'].state == 'running'
+            fail_msg: "Apache service is not running"
+            success_msg: "Apache service is running"
+
+        - name: Test Apache HTTP response
+          uri:
+            url: "http://{{ ansible_default_ipv4.address }}"
+            method: GET
+            status_code: 200
+          register: apache_response
+
+        - name: Verify Apache responds to HTTP requests
+          assert:
+            that:
+              - apache_response.status == 200
+            fail_msg: "Apache is not responding to HTTP requests"
+            success_msg: "Apache is responding to HTTP requests"
+
+    - name: Test MySQL service
+      block:
+        - name: Check if MySQL is running
+          service_facts:
+        
+        - name: Verify MySQL is active
+          assert:
+            that:
+              - ansible_facts.services['mysql.service'].state == 'running'
+            fail_msg: "MySQL service is not running"
+            success_msg: "MySQL service is running"
+
+        - name: Test MySQL connection
+          mysql_info:
+            login_user: root
+            login_password: "{{ mysql.root_password }}"
+          register: mysql_info
+
+        - name: Verify MySQL is accessible
+          assert:
+            that:
+              - mysql_info.version is defined
+            fail_msg: "Cannot connect to MySQL"
+            success_msg: "MySQL connection successful"
+
+    - name: Test PHP installation
+      block:
+        - name: Check PHP version
+          command: php --version
+          register: php_version
+          changed_when: false
+
+        - name: Verify PHP is installed
+          assert:
+            that:
+              - php_version.rc == 0
+              - "'PHP' in php_version.stdout"
+            fail_msg: "PHP is not properly installed"
+            success_msg: "PHP is properly installed"
+
+        - name: Test PHP info page
+          uri:
+            url: "http://{{ ansible_default_ipv4.address }}/info.php"
+            method: GET
+            status_code: 200
+          register: php_info_response
+
+        - name: Verify PHP info page works
+          assert:
+            that:
+              - php_info_response.status == 200
+              - "'PHP Version' in php_info_response.content"
+            fail_msg: "PHP info page is not working"
+            success_msg: "PHP info page is working"
+
+    - name: Test database connectivity from PHP
+      block:
+        - name: Create PHP database test script
+          copy:
+            content: |
+              <?php
+              $servername = "localhost";
+              $username = "{{ mysql.users[0].name }}";
+              $password = "{{ mysql.users[0].password }}";
+              $dbname = "{{ mysql.databases[0].name }}";
+
+              try {
+                  $pdo = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+                  $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                  echo "Connection successful";
+              } catch(PDOException $e) {
+                  echo "Connection failed: " . $e->getMessage();
+              }
+              ?>
+            dest: "{{ apache.document_root }}/db_test.php"
+            owner: www-data
+            group: www-data
+            mode: '0644'
+
+        - name: Test PHP-MySQL connectivity
+          uri:
+            url: "http://{{ ansible_default_ipv4.address }}/db_test.php"
+            method: GET
+            status_code: 200
+          register: db_test_response
+
+        - name: Verify PHP can connect to MySQL
+          assert:
+            that:
+              - "'Connection successful' in db_test_response.content"
+            fail_msg: "PHP cannot connect to MySQL"
+            success_msg: "PHP can connect to MySQL"
+
+    - name: Test security configurations
+      block:
+        - name: Check if UFW is active
+          command: ufw status
+          register: ufw_status
+          changed_when: false
+          when: firewall_enabled | default(true)
+
+        - name: Verify firewall is active
+          assert:
+            that:
+              - "'Status: active' in ufw_status.stdout"
+            fail_msg: "UFW firewall is not active"
+            success_msg: "UFW firewall is active"
+          when: firewall_enabled | default(true)
+
+        - name: Check if Fail2Ban is running
+          service_facts:
+
+        - name: Verify Fail2Ban is active
+          assert:
+            that:
+              - ansible_facts.services['fail2ban.service'].state == 'running'
+            fail_msg: "Fail2Ban service is not running"
+            success_msg: "Fail2Ban service is running"
+          when: security.fail2ban_enabled | default(true)
+
+    - name: Display test results
+      debug:
+        msg:
+          - "🎉 LAMP Stack validation completed successfully!"
+          - "✅ Apache: Running and responding"
+          - "✅ MySQL: Running and accessible"
+          - "✅ PHP: Installed and working"
+          - "✅ Database connectivity: Working"
+          - "✅ Security: Configured"
+          - ""
+          - "Access your LAMP stack at:"
+          - "  - Main site: http://{{ ansible_default_ipv4.address }}"
+          - "  - PHP Info: http://{{ ansible_default_ipv4.address }}/info.php"
+          - "  - DB Test: http://{{ ansible_default_ipv4.address }}/db_test.php"

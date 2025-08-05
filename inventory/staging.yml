@@ -1,0 +1,27 @@
+---
+all:
+  children:
+    lamp_servers:
+      hosts:
+        staging-web:
+          ansible_host: 192.168.1.100
+          ansible_user: ubuntu
+      vars:
+        # Staging specific variables
+        environment: staging
+        
+        # Security settings for staging
+        firewall_enabled: true
+        ssl_enabled: false
+        
+        # Debug settings
+        apache:
+          server_admin: "staging@yourdomain.com"
+          server_name: "staging.yourdomain.com"
+          log_level: "info"
+        
+        php:
+          settings:
+            display_errors: "On"
+            log_errors: "On"
+            memory_limit: "256M"

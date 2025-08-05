@@ -1,0 +1,84 @@
+---
+# MySQL database server installation and configuration
+
+- name: Install MySQL server and client
+  apt:
+    name:
+      - mysql-server
+      - mysql-client
+      - python3-pymysql
+    state: present
+
+- name: Ensure MySQL is running and enabled
+  service:
+    name: mysql
+    state: started
+    enabled: true
+
+- name: Configure MySQL
+  template:
+    src: my.cnf.j2
+    dest: /etc/mysql/mysql.conf.d/lamp-stack.cnf
+    backup: true
+  notify: restart mysql
+
+- name: Set MySQL root password
+  mysql_user:
+    name: root
+    password: "{{ mysql.root_password }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    state: present
+  no_log: true
+
+- name: Create MySQL root configuration file
+  template:
+    src: root.my.cnf.j2
+    dest: /root/.my.cnf
+    owner: root
+    group: root
+    mode: '0600'
+  no_log: true
+
+- name: Remove anonymous MySQL users
+  mysql_user:
+    name: ""
+    host_all: true
+    state: absent
+    login_user: root
+    login_password: "{{ mysql.root_password }}"
+
+- name: Remove MySQL test database
+  mysql_db:
+    name: test
+    state: absent
+    login_user: root
+    login_password: "{{ mysql.root_password }}"
+
+- name: Create application databases
+  mysql_db:
+    name: "{{ item.name }}"
+    encoding: "{{ item.encoding | default('utf8mb4') }}"
+    collation: "{{ item.collation | default('utf8mb4_unicode_ci') }}"
+    state: present
+    login_user: root
+    login_password: "{{ mysql.root_password }}"
+  loop: "{{ mysql.databases }}"
+  when: mysql.databases is defined
+
+- name: Create application users
+  mysql_user:
+    name: "{{ item.name }}"
+    password: "{{ item.password }}"
+    priv: "{{ item.priv }}"
+    host: "{{ item.host | default('localhost') }}"
+    state: present
+    login_user: root
+    login_password: "{{ mysql.root_password }}"
+  loop: "{{ mysql.users }}"
+  when: mysql.users is defined
+  no_log: true
+
+- name: Ensure MySQL is running
+  service:
+    name: mysql
+    state: started

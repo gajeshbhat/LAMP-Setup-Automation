@@ -1,0 +1,9 @@
+/var/log/lamp-stack/*.log {
+    daily
+    missingok
+    rotate {{ backup_retention_days | default(7) }}
+    compress
+    delaycompress
+    notifempty
+    create 0644 root root
+}

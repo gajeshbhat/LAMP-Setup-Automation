@@ -1,0 +1,92 @@
+---
+# Apache web server installation and configuration
+
+- name: Install Apache web server
+  apt:
+    name: apache2
+    state: present
+  notify: restart apache
+
+- name: Install Apache modules
+  apt:
+    name:
+      - apache2-utils
+    state: present
+
+- name: Enable Apache modules
+  apache2_module:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ apache.modules }}"
+  notify: restart apache
+
+- name: Create document root directory
+  file:
+    path: "{{ apache.document_root }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+
+- name: Configure Apache main configuration
+  template:
+    src: apache2.conf.j2
+    dest: /etc/apache2/apache2.conf
+    backup: true
+  notify: restart apache
+
+- name: Configure Apache ports
+  template:
+    src: ports.conf.j2
+    dest: /etc/apache2/ports.conf
+    backup: true
+  notify: restart apache
+
+- name: Configure virtual hosts
+  template:
+    src: "{{ item.template }}"
+    dest: "/etc/apache2/sites-available/{{ item.name }}.conf"
+    backup: true
+  loop: "{{ apache.sites }}"
+  notify: restart apache
+
+- name: Enable virtual hosts
+  command: a2ensite {{ item.name }}
+  loop: "{{ apache.sites }}"
+  when: item.enabled | default(true)
+  notify: restart apache
+  register: enable_sites
+  changed_when: "'already enabled' not in enable_sites.stdout"
+
+- name: Disable default Apache site
+  command: a2dissite 000-default
+  notify: restart apache
+  register: disable_default
+  changed_when: "'already disabled' not in disable_default.stdout"
+
+- name: Set Apache security configuration
+  template:
+    src: security.conf.j2
+    dest: /etc/apache2/conf-available/security.conf
+    backup: true
+  notify: restart apache
+
+- name: Enable security configuration
+  command: a2enconf security
+  notify: restart apache
+  register: enable_security
+  changed_when: "'already enabled' not in enable_security.stdout"
+
+- name: Ensure Apache is running and enabled
+  service:
+    name: apache2
+    state: started
+    enabled: true
+
+- name: Create Apache log directory
+  file:
+    path: /var/log/lamp-stack
+    state: directory
+    owner: root
+    group: adm
+    mode: '0755'

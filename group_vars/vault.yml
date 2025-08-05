@@ -1,0 +1,14 @@
+---
+# Encrypted variables (use ansible-vault to encrypt this file)
+# Run: ansible-vault encrypt group_vars/vault.yml
+
+# MySQL passwords
+vault_mysql_root_password: "SecureRootPassword123!"
+vault_mysql_app_password: "SecureAppPassword123!"
+
+# SSL certificate information (if using custom certificates)
+vault_ssl_cert_path: "/etc/ssl/certs/lamp-stack.crt"
+vault_ssl_key_path: "/etc/ssl/private/lamp-stack.key"
+
+# Additional secrets
+vault_admin_password: "AdminPassword123!"

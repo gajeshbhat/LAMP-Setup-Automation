@@ -1,0 +1,70 @@
+---
+# Common system configuration tasks
+
+- name: Set timezone
+  timezone:
+    name: "{{ timezone }}"
+  notify: restart rsyslog
+
+- name: Set locale
+  locale_gen:
+    name: "{{ locale }}"
+    state: present
+
+- name: Update package cache
+  apt:
+    update_cache: true
+    cache_valid_time: 3600
+  when: package_update_cache | bool
+
+- name: Upgrade all packages
+  apt:
+    upgrade: dist
+  when: package_upgrade | bool
+
+- name: Install essential system packages
+  apt:
+    name:
+      - curl
+      - wget
+      - unzip
+      - git
+      - htop
+      - vim
+      - tree
+      - rsync
+      - software-properties-common
+      - apt-transport-https
+      - ca-certificates
+      - gnupg
+      - lsb-release
+    state: present
+
+- name: Create admin user if not exists
+  user:
+    name: "{{ admin_user }}"
+    groups: "{{ admin_groups }}"
+    shell: /bin/bash
+    create_home: true
+    append: true
+  when: admin_user is defined
+
+- name: Configure SSH for admin user
+  authorized_key:
+    user: "{{ admin_user }}"
+    state: present
+    key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+  when: admin_user is defined
+  ignore_errors: true
+
+- name: Set up log rotation
+  template:
+    src: logrotate.conf.j2
+    dest: /etc/logrotate.d/lamp-stack
+    mode: '0644'
+
+- name: Ensure system is up to date
+  apt:
+    name: "*"
+    state: latest
+  when: package_upgrade | bool

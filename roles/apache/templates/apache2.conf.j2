@@ -1,0 +1,63 @@
+# Apache2 Configuration for LAMP Stack
+
+# Global configuration
+ServerRoot /etc/apache2
+PidFile ${APACHE_PID_FILE}
+Timeout 300
+KeepAlive On
+MaxKeepAliveRequests 100
+KeepAliveTimeout 5
+
+# User and Group
+User ${APACHE_RUN_USER}
+Group ${APACHE_RUN_GROUP}
+
+# Server Information
+ServerTokens Prod
+ServerSignature Off
+
+# Hostname and Port
+ServerName {{ apache.server_name | default('localhost') }}
+
+# Directory Configuration
+<Directory />
+    Options FollowSymLinks
+    AllowOverride None
+    Require all denied
+</Directory>
+
+<Directory /usr/share>
+    AllowOverride None
+    Require all granted
+</Directory>
+
+<Directory {{ apache.document_root }}>
+    Options Indexes FollowSymLinks
+    AllowOverride All
+    Require all granted
+</Directory>
+
+# File Access
+<Files ".ht*">
+    Require all denied
+</Files>
+
+# Logging
+LogFormat "%v:%p %h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" vhost_combined
+LogFormat "%h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" combined
+LogFormat "%h %l %u %t \"%r\" %>s %O" common
+LogFormat "%{Referer}i -> %U" referer
+LogFormat "%{User-agent}i" agent
+
+# Include module configuration
+IncludeOptional mods-enabled/*.load
+IncludeOptional mods-enabled/*.conf
+
+# Include ports configuration
+Include ports.conf
+
+# Include generic snippets of statements
+IncludeOptional conf-enabled/*.conf
+
+# Include virtual host configurations
+IncludeOptional sites-enabled/*.conf

@@ -1,0 +1,56 @@
+# Apache Security Configuration
+
+# Hide Apache version and OS information
+ServerTokens Prod
+ServerSignature Off
+
+# Disable server-side includes and CGI execution
+<Directory />
+    Options -Indexes -Includes -ExecCGI
+    AllowOverride None
+</Directory>
+
+# Prevent access to .htaccess and other sensitive files
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+# Prevent access to backup and temporary files
+<FilesMatch "\.(bak|config|sql|fla|psd|ini|log|sh|inc|swp|dist)$">
+    Require all denied
+</FilesMatch>
+
+# Security headers
+<IfModule mod_headers.c>
+    # Prevent MIME type sniffing
+    Header always set X-Content-Type-Options nosniff
+    
+    # Prevent clickjacking
+    Header always set X-Frame-Options DENY
+    
+    # Enable XSS protection
+    Header always set X-XSS-Protection "1; mode=block"
+    
+    # Strict Transport Security (HTTPS only)
+    {% if ssl_enabled | default(false) %}
+    Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+    {% endif %}
+    
+    # Referrer Policy
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    
+    # Content Security Policy (basic)
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self';"
+</IfModule>
+
+# Disable unnecessary HTTP methods
+<LimitExcept GET POST HEAD>
+    Require all denied
+</LimitExcept>
+
+# Timeout settings
+Timeout 60
+KeepAliveTimeout 5
+
+# Limit request size (adjust as needed)
+LimitRequestBody 10485760  # 10MB

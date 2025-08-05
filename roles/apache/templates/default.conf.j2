@@ -1,0 +1,57 @@
+<VirtualHost *:{{ apache_listen_port | default(80) }}>
+    ServerAdmin {{ apache.server_admin }}
+    ServerName {{ apache.server_name }}
+    DocumentRoot {{ apache.document_root }}
+
+    <Directory {{ apache.document_root }}>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    # Logging
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+    LogLevel {{ apache.log_level | default('warn') }}
+
+    # Security headers
+    Header always set X-Content-Type-Options nosniff
+    Header always set X-Frame-Options DENY
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Hide Apache version
+    ServerTokens Prod
+    ServerSignature Off
+</VirtualHost>
+
+{% if ssl_enabled | default(false) %}
+<VirtualHost *:{{ apache_listen_port_ssl | default(443) }}>
+    ServerAdmin {{ apache.server_admin }}
+    ServerName {{ apache.server_name }}
+    DocumentRoot {{ apache.document_root }}
+
+    SSLEngine on
+    SSLCertificateFile /etc/ssl/certs/apache-selfsigned.crt
+    SSLCertificateKeyFile /etc/ssl/private/apache-selfsigned.key
+
+    <Directory {{ apache.document_root }}>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    # Logging
+    ErrorLog ${APACHE_LOG_DIR}/ssl_error.log
+    CustomLog ${APACHE_LOG_DIR}/ssl_access.log combined
+    LogLevel {{ apache.log_level | default('warn') }}
+
+    # Security headers
+    Header always set X-Content-Type-Options nosniff
+    Header always set X-Frame-Options DENY
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</VirtualHost>
+{% endif %}

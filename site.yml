@@ -1,0 +1,74 @@
+---
+# Main playbook for LAMP stack deployment
+- name: Deploy LAMP Stack
+  hosts: lamp_servers
+  become: true
+  gather_facts: true
+  
+  pre_tasks:
+    - name: Update package cache
+      apt:
+        update_cache: true
+        cache_valid_time: 3600
+      when: ansible_os_family == "Debian"
+      tags: ['always']
+
+    - name: Install essential packages
+      apt:
+        name:
+          - curl
+          - wget
+          - unzip
+          - git
+          - htop
+          - vim
+        state: present
+      tags: ['always']
+
+  roles:
+    - role: common
+      tags: ['common']
+    
+    - role: security
+      tags: ['security']
+    
+    - role: apache
+      tags: ['apache', 'web']
+    
+    - role: mysql
+      tags: ['mysql', 'database']
+    
+    - role: php
+      tags: ['php', 'web']
+
+  post_tasks:
+    - name: Ensure all services are running
+      service:
+        name: "{{ item }}"
+        state: started
+        enabled: true
+      loop:
+        - apache2
+        - mysql
+      tags: ['validation']
+
+    - name: Create test PHP info page
+      copy:
+        content: |
+          <?php
+          phpinfo();
+          ?>
+        dest: "{{ apache.document_root }}/info.php"
+        owner: www-data
+        group: www-data
+        mode: '0644'
+      tags: ['validation']
+
+    - name: Display access information
+      debug:
+        msg:
+          - "LAMP stack installation completed successfully!"
+          - "Access your server at: http://{{ ansible_host | default(ansible_default_ipv4.address) }}"
+          - "PHP info page: http://{{ ansible_host | default(ansible_default_ipv4.address) }}/info.php"
+          - "MySQL root password: {{ mysql.root_password }}"
+      tags: ['validation']

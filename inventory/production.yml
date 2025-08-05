@@ -1,0 +1,37 @@
+---
+all:
+  children:
+    lamp_servers:
+      hosts:
+        prod-web-01:
+          ansible_host: 10.0.1.10
+          ansible_user: ubuntu
+        prod-web-02:
+          ansible_host: 10.0.1.11
+          ansible_user: ubuntu
+      vars:
+        # Production specific variables
+        environment: production
+        
+        # Security settings for production
+        firewall_enabled: true
+        ssl_enabled: true
+        
+        # Performance settings
+        apache:
+          server_admin: "admin@yourdomain.com"
+          server_name: "yourdomain.com"
+          log_level: "error"
+        
+        mysql:
+          bind_address: "127.0.0.1"
+          
+        php:
+          settings:
+            display_errors: "Off"
+            log_errors: "On"
+            memory_limit: "512M"
+            
+        # Backup settings
+        backup_enabled: true
+        backup_retention_days: 30

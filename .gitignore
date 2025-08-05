@@ -1,0 +1,34 @@
+# Vagrant
+.vagrant/
+*.log
+
+# Ansible
+*.retry
+ansible.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+
+# Backup files
+*.bak
+*.backup
+
+# Secrets (if not using ansible-vault)
+secrets.yml
+passwords.txt
+
+# Local configuration overrides
+local_vars.yml
+local_inventory.yml
